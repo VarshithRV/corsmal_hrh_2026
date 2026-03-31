@@ -242,11 +242,34 @@ def launch_setup(context, *args, **kwargs):
                 "alpha":0.8,
                 "linear_P":1.0,
                 "linear_D":0.0,
-                "angular_P":1.0,
+                "angular_P":2.0,
                 "angular_D":0.0,
                 "max_velocity":1.0,
             }
         ]
+    )
+
+    tsctge_node = Node(
+        package="motion_planning_abstractions",
+        executable="task_space_cubic_polynomial_trajectory_server",
+        name="task_space_cubic_polynomial_trajectory_server",
+        output="screen",
+        parameters=[
+            robot_description,
+            robot_description_semantic,
+            robot_description_kinematics,
+            {
+                "planning_group" : "ur_manipulator",
+                "maximum_task_space_velocity" : 1.0,
+                "maximum_task_space_acceleration" : 3.0,
+                "maximum_joint_space_velocity" : 3.15,
+                "maximum_joint_space_acceleration" : 3.14,
+                "joint_prefix" : "",
+                "joint_trajectory_controller" : "scaled_joint_trajectory_controller",
+                "endeffector_link" : "tool0",
+            },
+            {"use_sim_time":use_sim_time},
+        ],
     )
 
     apriltag_grid_detector = Node(
@@ -274,6 +297,7 @@ def launch_setup(context, *args, **kwargs):
 
     nodes_to_start = [
         preaction_server,
+        tsctge_node,
         # right_camera_launch,
         # left_camera_launch,
         # apriltag_grid_detector,
