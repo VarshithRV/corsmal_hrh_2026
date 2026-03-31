@@ -223,6 +223,32 @@ def launch_setup(context, *args, **kwargs):
         ),
     )
 
+    human_robot_handover = Node(
+        package="corsmal_hrh_2026",
+        executable="human_robot_handover",
+        name="human_robot_handover",
+        output="screen",
+        parameters=[
+            {"use_sim_time": use_sim_time},
+            {
+                "planning_group": "ur_manipulator",
+                "endeffector_link": "tool0",
+                "tscubic_gen_traj_ns":"/task_space_cubic_polynomial_trajectory_server/generate_trajectory",
+                "tscubic_exec_traj_ns":"/task_space_cubic_polynomial_trajectory_server/execute_trajectory",
+                "set_io_ns":"/io_and_status_controller/set_io",
+                "servo_node_ns": "/servo_node",
+                "joint_traj_controller": "scaled_joint_trajectory_controller",
+                "joint_vel_controller": "forward_velocity_controller",
+                "alpha":0.8,
+                "linear_P":1.0,
+                "linear_D":0.0,
+                "angular_P":1.0,
+                "angular_D":0.0,
+                "max_velocity":1.0,
+            }
+        ]
+    )
+
     apriltag_grid_detector = Node(
         package="apriltag_grid_detector",
         executable="apriltag_grid_detector",
@@ -248,11 +274,12 @@ def launch_setup(context, *args, **kwargs):
 
     nodes_to_start = [
         preaction_server,
-        right_camera_launch,
+        # right_camera_launch,
         # left_camera_launch,
-        apriltag_grid_detector,
+        # apriltag_grid_detector,
         # left_camera_calibration_launch,
-        right_camera_calibration_launch,
+        # right_camera_calibration_launch,
+        human_robot_handover,
     ]
 
     return nodes_to_start
