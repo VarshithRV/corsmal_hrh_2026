@@ -288,7 +288,6 @@ void callback(
         rate.sleep();
     }
 
-
     // gripper on here
 
     ee_pose_tracker_interface->stop_tracking_();
@@ -296,24 +295,24 @@ void callback(
     ee_pose_tracker_interface->unprepare_tracker_();
 
     current_pose = *single_arm_control_interface->get_current_ee_pose();
-    current_pose.position.z = 0.07;
+    current_pose.position.z = 0.1;
 
     // go down 
-    single_arm_control_interface->execute_waypoints_cubic({current_pose},{0.5},0.3,0.0);
+    single_arm_control_interface->execute_waypoints_cubic({current_pose},{1.2},0.3,0.0);
 
     // gripper off here
 
     // go up a bit
     current_pose.position.z += 0.1;
-    single_arm_control_interface->execute_waypoints_cubic({current_pose},{0.2},0.3,0.0);
+    single_arm_control_interface->execute_waypoints_cubic({current_pose},{0.5},0.3,0.0);
 
-    single_arm_control_interface->move_to_joint_positions(
-        {-0.251881, -1.21652, -2.01470, -3.057, -2.2568, 0.076789});
+    single_arm_control_interface->move_to_joint_positions({-0.251881, -1.21652, -2.01470, -3.057, -2.2568, 0.076789});
 
     RCLCPP_INFO(logger, "Finished handover sequence");
     res->success = true;
     res->message = "Handover completed";
 }
+
 
 int main(int argc, char ** argv)
 {
@@ -325,25 +324,27 @@ int main(int argc, char ** argv)
     auto logger = node->get_logger();
 
     auto shared_pose = std::make_shared<SharedGraspPose>();
-
+    RCLCPP_INFO(node->get_logger(),"Initializing Single Arm Control Interface");
     auto single_arm_control_interface = std::make_shared<BareBonesMoveit>(node);
-    auto ee_pose_tracker_interface = std::make_shared<PoseTracker>(node);
+    RCLCPP_INFO(node->get_logger(),"Initializing Pose Tracker Interface");
+    auto ee_pose_tracker_interface = std::make_shared<PoseTracker>(node,single_arm_control_interface);
 
     auto apr_tag_sub = node->create_subscription<geometry_msgs::msg::PoseStamped>(
         "/object0_filtered_pose",
         10,
         [shared_pose](geometry_msgs::msg::PoseStamped::SharedPtr msg) {
             sub_cb(msg, shared_pose);
-        });
+        }
+    );
 
-    auto grasp_pose_publisher =
-        node->create_publisher<geometry_msgs::msg::PoseStamped>("~/grasp_pose", 10);
+    auto grasp_pose_publisher = node->create_publisher<geometry_msgs::msg::PoseStamped>("~/grasp_pose", 10);
 
     auto grasp_pose_publisher_timer = node->create_wall_timer(
         std::chrono::milliseconds(100),
         [wall_clock, shared_pose, grasp_pose_publisher]() {
             grasp_pose_publisher_timer_cb(wall_clock, shared_pose, grasp_pose_publisher);
-        });
+        }
+    );
 
     auto handover_server = node->create_service<std_srvs::srv::Trigger>(
         "~/handover",
@@ -353,7 +354,8 @@ int main(int argc, char ** argv)
             callback(node, res, single_arm_control_interface, ee_pose_tracker_interface, shared_pose);
         },
         rmw_qos_profile_services_default,
-        parallel_cb_group);
+        parallel_cb_group
+    );
 
     RCLCPP_INFO(logger, "The node should be ready");
 

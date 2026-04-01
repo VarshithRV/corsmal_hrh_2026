@@ -296,7 +296,7 @@ def launch_setup(context, *args, **kwargs):
     )
 
     nodes_to_start = [
-        preaction_server,
+        # preaction_server,
         tsctge_node,
         # right_camera_launch,
         # left_camera_launch,
